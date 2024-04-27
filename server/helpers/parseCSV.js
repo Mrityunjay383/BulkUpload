@@ -6,7 +6,7 @@ const Batch = require("../model/batch");
 exports.parseCSVAndCreateBatches = (filePath, uploadId, customers) => {
   return new Promise((resolve, reject) => {
     const batches = [];
-    const batchSize = 1000;
+    const batchSize = process.env.BATCH_SIZE;
 
     const stream = fs
       .createReadStream(filePath)

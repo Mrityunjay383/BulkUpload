@@ -6,9 +6,9 @@ const { processBatchesInParallel } = require("../helpers/processBatches");
 const fs = require("fs");
 
 router.post("/upload", async (req, res) => {
-  try {
-    const { io } = req.app;
+  const { io } = req.app;
 
+  try {
     const csvFile = req.files.csvFile;
     const fileName = `${Date.now()}_${csvFile.name.replace(" ", "_")}`;
 
@@ -57,6 +57,10 @@ router.post("/upload", async (req, res) => {
   } catch (err) {
     console.error("Error uploading file:", err);
     // res.status(500).send("Internal Server Error");
+
+    io.emit("progressError", {
+      message: "Upload failed!",
+    });
   }
 });
 
