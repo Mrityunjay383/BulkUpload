@@ -2,15 +2,16 @@ const express = require("express");
 const router = express.Router();
 const Upload = require("../model/upload");
 const { parseCSVAndCreateBatches } = require("../helpers/parseCSV");
-const { processBatchesInParallel } = require("../helpers/processBatches");
 const fs = require("fs");
 const Customer = require("../model/customer");
 
+const { Worker } = require("worker_threads");
+
 router.get("/", async (req, res) => {
   try {
-    const customers = await Customer.find({}).sort({ _id: -1 }).limit(100);
+    const customers = await Customer.find({}).sort({ _id: -1 }).limit(10000);
 
-    res.status(200).json({ customers });
+    res.status(200).json({ success: true, customers });
   } catch (err) {
     console.error("Error:", err);
     res.status(500).send("Internal Server Error");
@@ -37,6 +38,8 @@ router.post("/upload", async (req, res) => {
       end_time: null,
     });
 
+    const uploadId = newUpload._id.toString();
+
     res.status(200).json({ success: true });
 
     console.log(`#2024118173716243 Started Processing`);
@@ -45,28 +48,51 @@ router.post("/upload", async (req, res) => {
     console.time("CSVParsing");
     const { batches, customers } = await parseCSVAndCreateBatches(
       `uploads/${fileName}`,
-      newUpload._id.toString()
+      uploadId
     );
-    console.log(`#2024134175130396 customers`, customers.length);
 
     newUpload.total_records = customers.length;
     await newUpload.save();
 
     console.log(`#2024118171546303 Batches extracted`);
 
-    // Process batches in parallel
-    await processBatchesInParallel(newUpload._id, batches, customers, io);
-
-    console.log(`#2024118171558506 Db operation done`);
-
-    // Update upload status to 'completed'
-    newUpload.status = "completed";
-    newUpload.end_time = new Date();
-    await newUpload.save();
-
-    // Delete CSV file if upload is successful
-    fs.unlinkSync(`uploads/${fileName}`);
     console.timeEnd("CSVParsing");
+
+    let worker = new Worker("./helpers/worker.js", {
+      workerData: {
+        batches,
+        customers,
+      },
+    });
+
+    worker.on("message", async ({ done, uploadedRecords }) => {
+      if (done) {
+        // Process batches in parallel
+        // await processBatchesInParallel(newUpload._id, batches, customers, io);
+
+        console.log(`#2024118171558506 Db operation done`);
+
+        // Update upload status to 'completed'
+        newUpload.status = "completed";
+        newUpload.end_time = new Date();
+        await newUpload.save();
+
+        // Delete CSV file if upload is successful
+        fs.unlinkSync(`uploads/${fileName}`);
+
+        io.emit("progressUpdate", {
+          msg: "Uploading Completed",
+          totalRecords: customers.length,
+        });
+      } else {
+        //Emit progress update event
+        io.emit("progressUpdate", {
+          uploadId,
+          uploadedRecords,
+          totalRecords: customers.length,
+        });
+      }
+    });
   } catch (err) {
     console.error("Error uploading file:", err);
     // res.status(500).send("Internal Server Error");

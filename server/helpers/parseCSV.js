@@ -19,7 +19,6 @@ exports.parseCSVAndCreateBatches = (filePath, uploadId) => {
         name: row["Name"],
         mobileNumber: row["mobile-number"],
         upload_id: uploadId,
-        batchIndex: Math.floor(customers.length / batchSize) + 1,
       };
       customers.push(newCustomer);
     });
@@ -42,7 +41,7 @@ exports.parseCSVAndCreateBatches = (filePath, uploadId) => {
           status: "pending",
           upload_id: uploadId,
         });
-        batches.push(newBatch._id);
+        batches.push(newBatch._id.toString());
       }
 
       resolve({ batches, customers });
