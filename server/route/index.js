@@ -4,6 +4,18 @@ const Upload = require("../model/upload");
 const { parseCSVAndCreateBatches } = require("../helpers/parseCSV");
 const { processBatchesInParallel } = require("../helpers/processBatches");
 const fs = require("fs");
+const Customer = require("../model/customer");
+
+router.get("/", async (req, res) => {
+  try {
+    const customers = await Customer.find({}).sort({ _id: -1 }).limit(100);
+
+    res.status(200).json({ customers });
+  } catch (err) {
+    console.error("Error uploading file:", err);
+    res.status(500).send("Internal Server Error");
+  }
+});
 
 router.post("/upload", async (req, res) => {
   const { io } = req.app;

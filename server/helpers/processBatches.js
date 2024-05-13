@@ -22,6 +22,9 @@ exports.processBatchesInParallel = async (uploadId, batches, customers, io) => {
         batch.end_record_index + 1
       );
 
+      // Simulate batch processing (replace with actual processing logic)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Insert batchCustomers into the database
       await Customer.insertMany(batchCustomers);
 
@@ -40,9 +43,9 @@ exports.processBatchesInParallel = async (uploadId, batches, customers, io) => {
       await batch.save();
 
       // Updating the count of the uploaded_records
-      await Upload.findByIdAndUpdate(uploadId, {
-        uploaded_records: uploadedRecords,
-      });
+      // await Upload.findByIdAndUpdate(uploadId, {
+      //   uploaded_records: uploadedRecords,
+      // });
 
       console.log(`#2024118182920298 Batch index ${batch.batch_index} Done`);
     };
