@@ -5,7 +5,7 @@ const batchSchema = new mongoose.Schema({
   start_record_index: Number,
   end_record_index: Number,
   status: String,
-  upload_id: { type: mongoose.Schema.Types.ObjectId, ref: "Upload" },
+  upload_id: String,
 });
 
 module.exports = mongoose.model("Batch", batchSchema);

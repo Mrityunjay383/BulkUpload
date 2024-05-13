@@ -12,7 +12,7 @@ router.get("/", async (req, res) => {
 
     res.status(200).json({ customers });
   } catch (err) {
-    console.error("Error uploading file:", err);
+    console.error("Error:", err);
     res.status(500).send("Internal Server Error");
   }
 });
@@ -42,12 +42,12 @@ router.post("/upload", async (req, res) => {
     console.log(`#2024118173716243 Started Processing`);
 
     // Parse CSV file and create batches
-    const customers = [];
-    const batches = await parseCSVAndCreateBatches(
+    console.time("CSVParsing");
+    const { batches, customers } = await parseCSVAndCreateBatches(
       `uploads/${fileName}`,
-      newUpload._id,
-      customers
+      newUpload._id.toString()
     );
+    console.log(`#2024134175130396 customers`, customers.length);
 
     newUpload.total_records = customers.length;
     await newUpload.save();
@@ -66,6 +66,7 @@ router.post("/upload", async (req, res) => {
 
     // Delete CSV file if upload is successful
     fs.unlinkSync(`uploads/${fileName}`);
+    console.timeEnd("CSVParsing");
   } catch (err) {
     console.error("Error uploading file:", err);
     // res.status(500).send("Internal Server Error");

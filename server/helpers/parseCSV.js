@@ -3,8 +3,9 @@ const csvParser = require("csv-parser");
 const Batch = require("../model/batch");
 
 // Function to parse CSV file and create batches
-exports.parseCSVAndCreateBatches = (filePath, uploadId, customers) => {
+exports.parseCSVAndCreateBatches = (filePath, uploadId) => {
   return new Promise((resolve, reject) => {
+    const customers = [];
     const batches = [];
     const batchSize = process.env.BATCH_SIZE;
 
@@ -44,7 +45,7 @@ exports.parseCSVAndCreateBatches = (filePath, uploadId, customers) => {
         batches.push(newBatch._id);
       }
 
-      resolve(batches);
+      resolve({ batches, customers });
     });
 
     stream.on("error", (error) => {
