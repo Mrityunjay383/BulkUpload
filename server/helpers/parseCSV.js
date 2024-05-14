@@ -1,38 +1,29 @@
-const fs = require("fs");
-const csvParser = require("csv-parser");
+const { Worker } = require("worker_threads");
 const Batch = require("../model/batch");
 
 // Function to parse CSV file and create batches
 exports.parseCSVAndCreateBatches = (filePath, uploadId) => {
-  return new Promise((resolve, reject) => {
-    const customers = [];
+  return new Promise((resolve) => {
     const batches = [];
     const batchSize = process.env.BATCH_SIZE;
 
-    const stream = fs
-      .createReadStream(filePath)
-      .pipe(csvParser(["Name", "mobile-number"]));
-
-    stream.on("data", async (row) => {
-      // Save customer data to an array
-      const newCustomer = {
-        name: row["Name"],
-        mobileNumber: row["mobile-number"],
-        upload_id: uploadId,
-      };
-      customers.push(newCustomer);
+    const worker = new Worker("./helpers/worker.js", {
+      workerData: {
+        filePath,
+        uploadId,
+      },
     });
 
-    stream.on("end", async () => {
+    worker.on("message", async ({ customers, countIdx }) => {
       // Calculate total number of batches
-      const totalBatches = Math.ceil(customers.length / batchSize);
+      const totalBatches = Object.keys(customers).length;
 
       // Create batches
       for (let i = 0; i < totalBatches; i++) {
         const startRecordIndex = i * batchSize;
         const endRecordIndex = Math.min(
           (i + 1) * batchSize - 1,
-          customers.length - 1
+          i * batchSize + customers[i].length
         );
         const newBatch = await Batch.create({
           batch_index: i,
@@ -44,11 +35,7 @@ exports.parseCSVAndCreateBatches = (filePath, uploadId) => {
         batches.push(newBatch._id.toString());
       }
 
-      resolve({ batches, customers });
-    });
-
-    stream.on("error", (error) => {
-      reject(error);
+      resolve({ batches, customers, countIdx });
     });
   });
 };

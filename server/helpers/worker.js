@@ -1,13 +1,36 @@
-require("../config/database").connect();
 const { parentPort, workerData } = require("worker_threads");
+const fs = require("fs");
+const csvParser = require("csv-parser");
 
-const process = async () => {
-  console.time("DB Operation");
-  parentPort.postMessage({ done: false, uploadedRecords });
+const { filePath, uploadId } = workerData;
 
-  console.timeEnd("DB Operation");
-};
+const customers = {};
+let countIdx = 0;
+const batchSize = process.env.BATCH_SIZE;
+let batchIdx = -1;
 
-process().then(() => {
-  parentPort.postMessage({ done: true });
+const stream = fs
+  .createReadStream(filePath)
+  .pipe(csvParser(["Name", "mobile-number"]));
+
+stream.on("data", (row) => {
+  // Save customer data to an array
+  const newCustomer = {
+    name: row["Name"],
+    mobileNumber: row["mobile-number"],
+    upload_id: uploadId,
+  };
+
+  if (countIdx % batchSize === 0) {
+    batchIdx++;
+    customers[batchIdx] = [];
+  }
+
+  customers[batchIdx].push(newCustomer);
+
+  countIdx++;
+});
+
+stream.on("end", () => {
+  parentPort.postMessage({ customers, countIdx });
 });

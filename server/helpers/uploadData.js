@@ -7,8 +7,6 @@ exports.uploadData = async (batches, customers, uploadId, io) => {
 
   const upload = await Upload.findOne({ _id: uploadId });
 
-  console.log(`#202413614158829 upload`, upload);
-
   for (let batchId of batches) {
     const batch = await Batch.findById(batchId);
 
@@ -17,10 +15,7 @@ exports.uploadData = async (batches, customers, uploadId, io) => {
     }
 
     // Process batch
-    const batchCustomers = customers.slice(
-      batch.start_record_index,
-      batch.end_record_index + 1
-    );
+    const batchCustomers = customers[batch.batch_index];
 
     // Insert batchCustomers into the database
     await Customer.insertMany(batchCustomers);

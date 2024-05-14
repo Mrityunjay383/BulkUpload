@@ -48,13 +48,15 @@ router.post("/upload", async (req, res) => {
       uploadId,
     });
 
+    console.time("Parsing CSV");
     // Parse CSV file and create batches
-    const { batches, customers } = await parseCSVAndCreateBatches(
+    const { batches, customers, countIdx } = await parseCSVAndCreateBatches(
       `uploads/${fileName}`,
       uploadId
     );
+    console.timeEnd("Parsing CSV");
 
-    newUpload.total_records = customers.length;
+    newUpload.total_records = countIdx;
     await newUpload.save();
 
     await uploadData(batches, customers, uploadId, io);
