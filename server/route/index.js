@@ -72,6 +72,7 @@ router.post("/upload", async (req, res) => {
 
     io.emit("UploadingProgress", {
       update: "Completed",
+      uploadId,
     });
   } catch (err) {
     console.error("Error uploading file:", err);
