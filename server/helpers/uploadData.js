@@ -30,6 +30,7 @@ exports.uploadData = async (batches, customers, uploadId, io) => {
     upload.uploaded_records = uploadedRecords;
     await upload.save();
 
+    //Emiting the progress upload to the user
     io.emit("UploadingProgress", {
       update: `Batch index ${batch.batch_index} is done`,
       uploadId,

@@ -32,9 +32,9 @@ router.post("/upload", async (req, res) => {
     // Create a new upload session
     const newUpload = await Upload.create({
       file_name: fileName,
-      total_records: 0, // Will be updated after parsing the CSV
-      uploaded_records: 0,
-      status: "pending",
+      total_records: 0, // this will be updated after parsing the CSV
+      uploaded_records: 0, // this will be updated after each batch successful upload
+      status: "pending", // the status will be updated to completed when the whole upload is done
       start_time: new Date(),
       end_time: null,
     });
@@ -43,18 +43,16 @@ router.post("/upload", async (req, res) => {
 
     res.status(200).json({ success: true });
 
-    io.emit("UploadingProgress", {
-      update: "Started",
-      uploadId,
-    });
+    // io.emit("UploadingProgress", {
+    //   update: "Started",
+    //   uploadId,
+    // });
 
-    console.time("Parsing CSV");
     // Parse CSV file and create batches
     const { batches, customers, countIdx } = await parseCSVAndCreateBatches(
       `uploads/${fileName}`,
       uploadId
     );
-    console.timeEnd("Parsing CSV");
 
     newUpload.total_records = countIdx;
     await newUpload.save();
